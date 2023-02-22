@@ -63,15 +63,15 @@
 			</when>
 		</conditional>
 		<param name="results" argument="-k" format="tabular" type="data" label="Results" help="Results (classification) file from Kraken/KrakenUniq/Kraken2" />
-		<param name="report" argument="--report" format="tabular" type="data" label="Report" optional="True" help="Report file from Kraken/KrakenUniq/Kraken2" />
-		<param name="taxid" argument="--taxid" type="text" value="" label="Taxonomic ID(s) to match" help="Space-delimited list of taxonomic IDs for which to extract matching reads">
+		<param argument="--report" format="tabular" type="data" label="Report" optional="True" help="Report file from Kraken/KrakenUniq/Kraken2" />
+		<param  argument="--taxid" type="text" value="" label="Taxonomic ID(s) to match" help="Space-delimited list of taxonomic IDs for which to extract matching reads">
 			<validator type="regex" message="Enter a space-separated list of numeric tax IDs">^\d+[\d ]*$</validator>
 		</param>
-		<param name="max" argument="--max" type="integer" value="100000000" min="1" label="Maximum reads to save" help="Maximum number of reads to save for each ID" />
-		<param name="exclude" argument="--exclude" type="boolean" value="False" truevalue="--exclude" falsevalue="" label="Invert output" help="Instead of finding reads that match given taxonomic IDs, find all reads that DO NOT match given IDs" />
-		<param name="fastq_output" argument="--fastq-output" type="boolean" value="False" truevalue="--fastq-output" falsevalue="" label="Output as FASTQ" help="Write output as FASTQ instead of the default FASTA" />
-		<param name="include_parents" argument="--include-parents" type="boolean" value="False" truevalue="--include-parents" falsevalue="" label="Include parents" help="Include reads classified at parent levels of the specified tax IDs" />
-		<param name="include_children" argument="--include-children" type="boolean" value="False" truevalue="--include-children" falsevalue="" label="Include children" help="Include reads classified more specifically than the specified tax IDs" />
+		<param argument="--max" type="integer" value="100000000" min="1" label="Maximum reads to save" help="Maximum number of reads to save for each ID" />
+		<param argument="--exclude" type="boolean" value="False" truevalue="--exclude" falsevalue="" label="Invert output" help="Instead of finding reads that match given taxonomic IDs, find all reads that DO NOT match given IDs" />
+		<param argument="--fastq-output" type="boolean" value="False" truevalue="--fastq-output" falsevalue="" label="Output as FASTQ" help="Write output as FASTQ instead of the default FASTA" />
+		<param argument="--include-parents" type="boolean" value="False" truevalue="--include-parents" falsevalue="" label="Include parents" help="Include reads classified at parent levels of the specified tax IDs" />
+		<param argument="--include-children" type="boolean" value="False" truevalue="--include-children" falsevalue="" label="Include children" help="Include reads classified more specifically than the specified tax IDs" />
 	</inputs>
 	<outputs>
 		<data name="output_1" format="fasta" metadata_source="input_1" label="${tool.name} on ${on_string}: forward reads">
@@ -191,55 +191,19 @@
 	</tests>
 	<help>
 		<![CDATA[
-		.. class:: infomark
-		**What it does**
-		-------------------
-		After running Kraken, Kraken2, or KrakenUniq, users may use the
-		`extract_kraken_reads.py` program to extract the FASTA or FASTQ reads
-		classified as a specific taxonomy ID. For example, this program can be used to
-		extract all bacterial reads or only reads assigned to Escherichia coli. Users
-		must provide (at minimum) the original sequence file(s), at least one taxonomy
-		ID, and the Kraken output file.
-		-------------------
-		**Command-line arguments**
-		-------------------
-		The following command-line usage corresponds with the Galaxy wrapper
-		parameters::
-		usage: extract_kraken_reads.py [-h] -k KRAKEN_FILE -s SEQ_FILE1
-		[-s2 SEQ_FILE2] -t TAXID [TAXID ...] -o
-		OUTPUT_FILE [-o2 OUTPUT_FILE2] [--append]
-		[--noappend] [--max MAX_READS] [-r REPORT_FILE]
-		[--include-parents] [--include-children]
-		[--exclude] [--fastq-output]
-		optional arguments:
-		-h, --help            show this help message and exit
-		-k KRAKEN_FILE        Kraken output file to parse
-		-s SEQ_FILE1, -s1 SEQ_FILE1, -1 SEQ_FILE1, -U SEQ_FILE1
-		FASTA/FASTQ File containing the raw sequence letters.
-		-s2 SEQ_FILE2, -2 SEQ_FILE2
-		2nd FASTA/FASTQ File containing the raw sequence
-		letters (paired).
-		-t TAXID [TAXID ...], --taxid TAXID [TAXID ...]
-		Taxonomy ID[s] of reads to extract (space-delimited)
-		-o OUTPUT_FILE, --output OUTPUT_FILE
-		Output FASTA/Q file containing the reads and sample
-		IDs
-		-o2 OUTPUT_FILE2, --output2 OUTPUT_FILE2
-		Output FASTA/Q file containig the second pair of reads
-		[required for paired input]
-		--max MAX_READS       Maximum number of reads to save [default: 100,000,000]
-		-r REPORT_FILE, --report REPORT_FILE
-		Kraken report file. [required only if --include-
-		parents/children is specified]
-		--include-parents     Include reads classified at parent levels of the
-		specified taxids
-		--include-children    Include reads classified more specifically than the
-		specified taxids
-		--exclude             Instead of finding reads matching specified taxids,
-		finds all reads NOT matching specified taxids
-		--fastq-output        Print output FASTQ reads [requires input FASTQ,
-		default: output is FASTA]
+**What it does**
+-------------------
+After running Kraken, Kraken2, or KrakenUniq, users may use the
+`extract_kraken_reads.py` program to extract the FASTA or FASTQ reads
+classified as a specific taxonomy ID. For example, this program can be used to
+extract all bacterial reads or only reads assigned to Escherichia coli. Users
+must provide (at minimum) the original sequence file(s), at least one taxonomy
+ID, and the Kraken output file.
 		]]>
 	</help>
 	<expand macro="citations" />
+    <creator>
+        <person givenName="Jeremy" familyName="Volkening" url="https://github.com/jvolkening" />
+        <person givenName="Paul" familyName="Zierep" email="zierep@informatik.uni-freiburg.de" />
+    </creator>
 </tool>
