@@ -2,24 +2,24 @@
 	<description>
 		Extract reads classified at any user-specified taxonomy IDs
 	</description>
-    <macros>
-        <import>macros.xml</import>
-    </macros>
+	<macros>
+		<import>macros.xml</import>
+	</macros>
 	<expand macro="biotools" />
 	<expand macro="requirements" />
 	<expand macro="version" />
 	<command detect_errors="exit_code">
 		<![CDATA[
 		#if $paired_reads.paired_reads_selector == "true":
-		extract_kraken_reads.py -k '$input' 
-		-s1 '$seq_1' 
+		extract_kraken_reads.py -k '$input'
+		-s1 '$seq_1'
 		-o '$output_1'
 		#else
-		extract_kraken_reads.py 
-		-k '$input' 
-		-s1 '$seq_1' 
-		-s2 '$seq_2' 
-		-o '$output_1' 
+		extract_kraken_reads.py
+		-k '$input'
+		-s1 '$seq_1'
+		-s2 '$seq_2'
+		-o '$output_1'
 		-o2 '$output_2'
 		#end if
 		]]>
@@ -33,20 +33,33 @@
 				<param argument="--seq_2" type="data" format="fasta, fastq" label="FASTA/FASTQ sequence" help="FASTA/FASTQ sequence file (for paired reads, may be gzipped)" />
 			</when>
 		</conditional>
+		
 	</inputs>
 	<outputs>
 		<data name="output_1" format="tabular" />
-		<data name="output_2" format="tabular" >
-		<filter>paired_reads.paired_reads_selector</filter>
+		<data name="output_2" format="tabular">
+			<filter>
+				paired_reads.paired_reads_selector
+			</filter>
 		</data>
 	</outputs>
- 
+	<!-- <tests>
+        <test>
+            <param name="input" value="extract_kraken_reads/taxonomy.txt"/>
+            <param name="seq_1" value="extract_kraken_reads/read1.fastq"/>
+			
+        </test>
+        <test>
+            <param name="input" value="extract_kraken_reads/taxonomy.txt"/>
+            <param name="seq_1" value="extract_kraken_reads/read1.fastq"/>
+
+        </test>
+    </tests> -->
 	<help>
-	<![CDATA[
-	KrakenTools is a suite of scripts to be used alongside the Kraken, KrakenUniq, Kraken 2, or Bracken programs. These scripts are designed to help Kraken users with downstream analysis of Kraken results. 
-
-	]]>
+		<![CDATA[
+		KrakenTools is a suite of scripts to be used alongside the Kraken, KrakenUniq, Kraken 2, or Bracken programs.
+		These scripts are designed to help Kraken users with downstream analysis of Kraken results.
+		]]>
 	</help>
-
 	<expand macro="citations" />
-</tool> 
+</tool>
