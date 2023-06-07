@@ -7,12 +7,10 @@
     <expand macro="requirements" />
     <expand macro="version" />
     <description>Fetches the DB required for phrokka</description>
-    <command detect_errors="exit_code">
-    <![CDATA[
+    <command><![CDATA[
         python '$__tool_directory__/data_manager_fetch_pharokka_db.py' --out '${out_file}' --version '${version}' 
         $test_data_manager
-    ]]>
-    </command>
+    ]]></command>
     <inputs>
     <param name="test_data_manager" type="hidden" value=""/>
     <param argument="--version" type="text" value="v1.2.0" help="Check https://github.com/gbouras13/pharokka/blob/c822b4c3b8cf642512a5c236fc4036ad53f48587/bin/databases.py#L102 for current version."/>
