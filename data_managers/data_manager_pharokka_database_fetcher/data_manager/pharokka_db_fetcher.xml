@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<tool id="pharokka_db_fetcher" name="phrokka DB fetcher" tool_type="manage_data" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="@PROFILE@">
-    <description>Fetches the DB required for phrokka</description>
+<tool id="pharokka_db_fetcher" name="pharokka DB fetcher" tool_type="manage_data" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="@PROFILE@">
+    <description>Fetches the DB required for pharokka</description>
     <macros>
         <import>macros.xml</import>
     </macros>
