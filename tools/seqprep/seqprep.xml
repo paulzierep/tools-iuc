@@ -1,0 +1,54 @@
+<tool id="seqprep" name="Merging paired-end Illumina reads (SeqPrep)" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
+    <requirements>
+        <requirement type="package" version="1.3.2">SeqPrep</requirement>
+    </requirements>
+    <command detect_errors="exit_code"><![CDATA[
+        SeqPrep -f "$forward_reads" -r "$reverse_reads" -1 "$output1" -2 "$output2" -s "$merged"
+    ]]></command>
+    <inputs>
+        <param type="data" name="forward_reads" format="fastq"/>
+        <param type="data" name="reverse_reads" format="fastq"/>
+        <param argument="-q" type="integer" value="13" optional="true" label="Quality score cutoff" help="Quality score cutoff for mismatches to be counted in overlap"/>
+        <param argument="-L" type="integer" value="30" optional="true" label="Minimal length" help="Minimum length of a trimmed or merged read to print it"/>
+    </inputs>
+    <outputs>
+        <data name="output1" format="fastq" label="${tool.name} on ${on_string}: Filtered Forward Reads"/>
+        <data name="output2" format="fastq" label="${tool.name} on ${on_string}: Filtered Reverse Reads"/>
+        <data name="merged" format="fastq" label="${tool.name} on ${on_string}: Merged Reads"/>
+    </outputs>
+    <tests>
+        <test>
+            <param name="forward_reads" value="input1.fq.gz"/>
+            <param name="reverse_reads" value="input2.fq.gz"/>
+            <output name="output1" file="output1.fq"/>
+            <output name="output2" file="output1.fq"/>
+        </test>
+    </tests>
+    <help><![CDATA[
+
+		**What it does:**
+		SeqPrep is a program to merge paired end Illumina reads that are overlapping into a single longer read. It may also just be
+		used for its adapter trimming feature without doing any paired end overlap. When an adapter sequence is present, that means
+		that the two reads must overlap (in most cases) so they are forcefully merged. When reads do not have adapter sequence they
+		must be treated with care when doing the merging, so a much more specific approach is taken. The default parameters were
+		chosen with specificity in mind, so that they could be ran on libraries where very few reads are expected to overlap. It is
+		always safest though to save the overlapping procedure for libraries where you have some prior knowledge that a significant
+		portion of the reads will have some overlap.
+
+		For more information see the SeqPrep GitHub repository
+		<https://github.com/jstjohn/SeqPrep/blob/master/README.md>_.
+
+
+   	]]></help>
+    <citations>
+        <citation type="bibtex">
+			@misc{githubREADME.md,
+ 			 	author = {LastTODO, FirstTODO},
+ 			 	year = {TODO},
+ 			 	title = {README.md},
+ 			 	publisher = {GitHub},
+ 			 	journal = {GitHub repository},
+ 			 	url = {https://github.com/jstjohn/SeqPrep/blob/master/README.md},
+		}</citation>
+    </citations>
+</tool>
