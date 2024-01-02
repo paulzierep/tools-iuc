@@ -1,54 +1,128 @@
-<tool id="seqprep" name="Merging paired-end Illumina reads (SeqPrep)" version="0.1.0+galaxy0" python_template_version="3.5" profile="21.05">
-    <requirements>
-        <requirement type="package" version="1.3.2">SeqPrep</requirement>
-    </requirements>
+<tool id="seqprep" name="Merging paired-end Illumina reads (SeqPrep)" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@">
+    <description>Merge and Trim Adapter Sequences from Paired-End Illumina Reads</description>
+    <macros>
+        <import>macros.xml</import>
+    </macros>
+    <expand macro="biotools"/>
+    <expand macro="requirements"/>
     <command detect_errors="exit_code"><![CDATA[
-        SeqPrep -f "$forward_reads" -r "$reverse_reads" -1 "$output1" -2 "$output2" -s "$merged"
+        SeqPrep
+            -f '${input1}'
+            -r '${input2}'
+            #if $output_all
+            -1 '${output1}'
+            -2 '${output2}'
+            #end if
+            #if $merge_reads
+            -s '${merged}'
+            #end if
+            #if $adapter_a
+            -A '${adapter_a}'
+            #end if
+            #if $adapter_b
+            -B '${adapter_b}'
+            #end if
+            #if $quality_cutoff
+            -q $quality_cutoff
+            #end if
+            #if $min_length
+            -L $min_length
+            #end if
     ]]></command>
     <inputs>
-        <param type="data" name="forward_reads" format="fastq"/>
-        <param type="data" name="reverse_reads" format="fastq"/>
-        <param argument="-q" type="integer" value="13" optional="true" label="Quality score cutoff" help="Quality score cutoff for mismatches to be counted in overlap"/>
-        <param argument="-L" type="integer" value="30" optional="true" label="Minimal length" help="Minimum length of a trimmed or merged read to print it"/>
+        <param label="First Read Input (FASTQ)" name="input1" type="data" format="fastq" />
+        <param label="Second Read Input (FASTQ)" name="input2" type="data" format="fastq" />
+        <param label="Merge Reads" name="merge_reads" type="boolean" truevalue="true" falsevalue="false" />
+        <param label="Output All Reads" name="output_all" type="boolean" truevalue="true" falsevalue="false" help="If selected, output both individual and merged reads. Otherwise, output only merged reads if 'Merge Reads' is selected." />
+        <param label="Adapter Sequence A" name="adapter_a" type="text" optional="true" />
+        <param label="Adapter Sequence B" name="adapter_b" type="text" optional="true" />
+        <param label="Quality Score Cutoff" name="quality_cutoff" type="integer" optional="true" />
+        <param label="Minimum Length of Reads" name="min_length" type="integer" optional="true" />
     </inputs>
     <outputs>
-        <data name="output1" format="fastq" label="${tool.name} on ${on_string}: Filtered Forward Reads"/>
-        <data name="output2" format="fastq" label="${tool.name} on ${on_string}: Filtered Reverse Reads"/>
-        <data name="merged" format="fastq" label="${tool.name} on ${on_string}: Merged Reads"/>
+        <data format="fastq.gz" name="output1" label="${tool.name} on ${on_string}: First Read Output">
+            <filter>output_all</filter>
+        </data>
+        <data format="fastq.gz" name="output2" label="${tool.name} on ${on_string}: Second Read Output">
+            <filter>output_all</filter>
+        </data>
+        <data format="fastq.gz" name="merged" label="${tool.name} on ${on_string}: Merged Reads">
+            <filter>merge_reads</filter>
+        </data>
     </outputs>
     <tests>
-        <test>
-            <param name="forward_reads" value="input1.fq.gz"/>
-            <param name="reverse_reads" value="input2.fq.gz"/>
-            <output name="output1" file="output1.fq"/>
-            <output name="output2" file="output1.fq"/>
+        <!-- Basic Functionality Tests -->
+        <!-- Merging with Two Outputs -->
+        <test expect_num_outputs="3">
+            <param name="input1" value="input1.fq" />
+            <param name="input2" value="input2.fq" />
+            <param name="output_all" value="true" />
+            <param name="merge_reads" value="true" />
+            <output name="output1" file="output1.fq.gz" />
+            <output name="output2" file="output2.fq.gz" />
+            <output name="merged" file="merged_output.fq.gz" />
+        </test>
+    
+        <!-- Without Merging, Two Outputs -->
+        <test expect_num_outputs="2">
+            <param name="input1" value="input1.fq" />
+            <param name="input2" value="input2.fq" />
+            <param name="output_all" value="true" />
+            <param name="merge_reads" value="false" />
+            <output name="output1" file="outputNoMerge1.fq.gz" />
+            <output name="output2" file="outputNoMerge2.fq.gz" />
+        </test>
+    
+        <!-- No Outputs -->
+        <test expect_num_outputs="0">
+            <param name="input1" value="input1.fq" />
+            <param name="input2" value="input2.fq" />
+            <param name="output_all" value="false" />
+            <param name="merge_reads" value="false" />
+        </test>
+    
+        <!-- Advanced Functional Tests -->
+        <!-- Specific Adapters, Quality Cutoff, and Read Length -->
+        <test expect_num_outputs="3">
+            <param name="input1" value="input1.fq" />
+            <param name="input2" value="input2.fq" />
+            <param name="output_all" value="true" />
+            <param name="merge_reads" value="true" />
+            <param name="adapter_a" value="ACTGACTG" />
+            <param name="adapter_b" value="GTGACTGA" />
+            <param name="quality_cutoff" value="13" />
+            <param name="min_length" value="30" />
+            <output name="output1" file="output_adseq1.fq.gz" />
+            <output name="output2" file="output_adseq2.fq.gz" />
+            <output name="merged" file="merged_seqoutput.fq.gz" />
+        </test>
+    
+        <!-- Test with Empty Input Files -->
+        <test expect_num_outputs="3">
+            <param name="input1" value="empty1.fq" />
+            <param name="input2" value="empty2.fq" />
+            <param name="output_all" value="true" />
+            <param name="merge_reads" value="true" />
+            <output name="output1" file="empty_output1.fq.gz" />
+            <output name="output2" file="empty_output2.fq.gz" />
+            <output name="merged" file="empty_merged_output.fq.gz" />
         </test>
     </tests>
     <help><![CDATA[
+        **SeqPrep**
 
-		**What it does:**
-		SeqPrep is a program to merge paired end Illumina reads that are overlapping into a single longer read. It may also just be
-		used for its adapter trimming feature without doing any paired end overlap. When an adapter sequence is present, that means
-		that the two reads must overlap (in most cases) so they are forcefully merged. When reads do not have adapter sequence they
-		must be treated with care when doing the merging, so a much more specific approach is taken. The default parameters were
-		chosen with specificity in mind, so that they could be ran on libraries where very few reads are expected to overlap. It is
-		always safest though to save the overlapping procedure for libraries where you have some prior knowledge that a significant
-		portion of the reads will have some overlap.
+        SeqPrep is a program to merge paired end Illumina reads that are overlapping into a single longer read. 
+        It can also trim adapter sequences from reads.
 
-		For more information see the SeqPrep GitHub repository
-		<https://github.com/jstjohn/SeqPrep/blob/master/README.md>_.
+        **Usage**
 
+        Select the input FASTQ files for the first and second reads. 
+        Optionally, provide custom adapter sequences, a quality score cutoff, and a minimum length for trimmed or merged reads. 
+        If merging is enabled, the merged output will be provided in addition to the individual read outputs.
 
-   	]]></help>
-    <citations>
-        <citation type="bibtex">
-			@misc{githubREADME.md,
- 			 	author = {LastTODO, FirstTODO},
- 			 	year = {TODO},
- 			 	title = {README.md},
- 			 	publisher = {GitHub},
- 			 	journal = {GitHub repository},
- 			 	url = {https://github.com/jstjohn/SeqPrep/blob/master/README.md},
-		}</citation>
-    </citations>
+        **Outputs**
+
+        The output will be provided in gzipped FASTQ format.
+    ]]></help>
+    <expand macro="citations"/>
 </tool>
