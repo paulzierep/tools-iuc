@@ -11,7 +11,8 @@ Rscript '${__tool_directory__}/phyloseq_plot_bar.R'
 --x '$x'
 --fill '$fill'
 --facet '${facet}'
---output '$output'
+--output 'tmp.pdf' &&
+cp 'tmp.pdf' '$output'
   ]]></command>
   <inputs>
     <expand macro="phyloseq_input"/>
