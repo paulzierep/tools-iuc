@@ -76,7 +76,7 @@
     <tests>
         <!-- defaults -->
         <test expect_num_outputs="5">
-            <param name="data" value="AalborgWWTPs.2010.rds" ftype="ampvis2"/> 
+            <param name="data" value="AalborgWWTPs-complete.rds" ftype="ampvis2"/> 
             <output name="otu_long" value="output_otu_long.tsv" ftype="tabular" />
             <output name="otu_short" value="output_otu_short.tsv" ftype="tabular" />
             <output name="tax" value="output_otu_taxonomy_mapping.tsv" ftype="tabular" />
@@ -94,15 +94,13 @@ The taxonomy table in the phyloseq object always uses the following headers:
 
 This can be changed using the `Add Rank Names to Phyloseq Object <toolshed.g2.bx.psu.edu/repos/iuc/phyloseq_add_rank_names/phyloseq_add_rank_names/1.50.0+galaxy2>`_ tool.  
 
-The Galaxy tool calls the `amp_export_fasta <https://kasperskytte.github.io/ampvis2/reference/amp_export_otutable.html>`_ function  
+The Galaxy tool calls the `amp_export_otutable <https://kasperskytte.github.io/ampvis2/reference/amp_export_otutable.html>`_ function  
 from the ampvis2 package.  
 
 Input
 =====
 
 @HELP_RDS_INPUT@
-
-For this to work, the ampvis2 RDS dataset must contain sequence information.  
 
 Use case
 ========
