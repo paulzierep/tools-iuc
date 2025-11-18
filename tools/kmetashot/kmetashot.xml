@@ -12,17 +12,17 @@
         <![CDATA[
             #import re
 
-            mkdir 'output' 'bins' &&
+            mkdir -p output bins &&
 
             #for $file in $bins_dir:
                 ln -s '$file' 'bins/$file.element_identifier' &&
             #end for
 
             kMetaShot_classifier_NV.py 
-            -b 'bins'
-            -o 'output'
+            -b bins
+            -o output
             -r '$reference.fields.path'
-            -p "\${GALAXY_SLOTS:-1}"
+            -p "${GALAXY_SLOTS:-1}"
             -a "$ass2ref"
 
         ]]>
