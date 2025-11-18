@@ -23,7 +23,7 @@
             -o 'output'
             -r '$reference.fields.path'
             -p "\${GALAXY_SLOTS:-1}"
-            -a ${ass2ref}
+            -a "$ass2ref"
 
         ]]>
     </command>
