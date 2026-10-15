@@ -2,7 +2,7 @@
     <description>Submission of (meta)data to the European Nucleotide Archive (ENA)</description>
     <macros>
         <token name="@TOOL_VERSION@">0.10.2</token>
-        <token name="@VERSION_SUFFIX@">0</token>
+        <token name="@VERSION_SUFFIX@">1</token>
         <token name="@PROFILE@">25.1</token>
         <import>samples_macros.xml</import>
     </macros>
@@ -45,10 +45,16 @@ mkdir ./submission_files;
     cp $runs_table_path $runs_table_out &&
 #end if
 #if $action_options.input_format_conditional.input_format == "user_generated_tables":
-    ln -s '$action_options.input_format_conditional.experiments_users_table' $experiments_table_path &&
     ln -s '$action_options.input_format_conditional.studies_users_table' $studies_table_path &&
-    ln -s '$action_options.input_format_conditional.runs_users_table' $runs_table_path &&
-    ln -s '$action_options.input_format_conditional.samples_users_table' $samples_table_path &&
+    #if $action_options.input_format_conditional.samples_users_table
+        ln -s '$action_options.input_format_conditional.samples_users_table' $samples_table_path &&
+    #end if
+    #if $action_options.input_format_conditional.experiments_users_table
+        ln -s '$action_options.input_format_conditional.experiments_users_table' $experiments_table_path &&
+    #end if
+    #if $action_options.input_format_conditional.runs_users_table
+        ln -s '$action_options.input_format_conditional.runs_users_table' $runs_table_path &&
+    #end if
 #end if
 #if $action_options.input_format_conditional.input_format == "excel_tables":
     ln -s '$action_options.input_format_conditional.xlsx_file' ./xlsx_input.xlsx &&
@@ -100,6 +106,7 @@ mkdir ./submission_files;
     #end for
 #else:
     #if $action_options.input_format_conditional.run_input_format_conditional.run_input_format == 'paired_list':
+        #if $action_options.input_format_conditional.run_input_format_conditional.paired_end_collection
         #for $pair in $action_options.input_format_conditional.run_input_format_conditional.paired_end_collection:
             #set $safename_reads_file = re.sub('[^\w\-_\.]', '_', $pair.name)
             ## Always need to add .fastq + compression suffix because the name is based on the pair name which has no extensions
@@ -134,8 +141,10 @@ mkdir ./submission_files;
             $files_to_upload.append(str($safename_fwd_reads_file))
             $files_to_upload.append(str($safename_rev_reads_file))
         #end for
+        #end if
     #end if
     #if $action_options.input_format_conditional.run_input_format_conditional.run_input_format == 'multiple_selection_list':
+        #if $action_options.input_format_conditional.run_input_format_conditional.data
         #for $file in $action_options.input_format_conditional.run_input_format_conditional.data:
             #set $safename_reads_file = re.sub('[^\w\-_\.]', '_', $file.element_identifier)
             #if $file.is_of_type('fastq', 'fastqsanger'):
@@ -159,6 +168,7 @@ mkdir ./submission_files;
             #end if      
             $files_to_upload.append(str($safename_reads_file))
         #end for
+        #end if
     #end if
 #end if
 
@@ -175,11 +185,22 @@ ena-upload-cli
 #end if
 #if $action_options.input_format_conditional.input_format == "excel_tables":
     --xlsx ./xlsx_input.xlsx 
-#elif $action_options.input_format_conditional.input_format == "user_generated_tables" or $action_options.input_format_conditional.input_format == "build_tables":
+#elif $action_options.input_format_conditional.input_format == "build_tables":
     --experiment '$experiments_table_path'
     --study '$studies_table_path'
     --run '$runs_table_path'
     --sample '$samples_table_path'
+#elif $action_options.input_format_conditional.input_format == "user_generated_tables":
+    --study '$studies_table_path'
+    #if $action_options.input_format_conditional.samples_users_table
+        --sample '$samples_table_path'
+    #end if
+    #if $action_options.input_format_conditional.experiments_users_table
+        --experiment '$experiments_table_path'
+    #end if
+    #if $action_options.input_format_conditional.runs_users_table
+        --run '$runs_table_path'
+    #end if
 #elif $action_options.input_format_conditional.input_format == "isa_json":
     --isa_json ./isa_json_input.json
     --isa_assay_stream '$action_options.input_format_conditional.isa_assay_stream'
@@ -213,10 +234,10 @@ ena-upload-cli
     cp './ENA_template_study_updated.tsv' $studies_table_out;
     cp './ENA_template_run_updated.tsv' $runs_table_out;
 #else
-    cp $studies_table_path_updated $studies_table_out 2>/dev/null;
-    cp $samples_table_path_updated $samples_table_out 2>/dev/null;
-    cp $experiments_table_path_updated $experiments_table_out 2>/dev/null;
-    cp $runs_table_path_updated $runs_table_out 2>/dev/null;
+    if [ -f $studies_table_path_updated ]; then cp $studies_table_path_updated $studies_table_out; else touch $studies_table_out; fi;
+    cp $samples_table_path_updated $samples_table_out 2>/dev/null || true;
+    cp $experiments_table_path_updated $experiments_table_out 2>/dev/null || true;
+    cp $runs_table_path_updated $runs_table_out 2>/dev/null || true;
 #end if
 
 python '$__tool_directory__/dump_yaml.py' $studies_table_out $samples_table_out $experiments_table_out $runs_table_out >> $output;
@@ -278,7 +299,7 @@ $samples.append({'title':str($sample.sample_title),'description':str($sample.sam
     <outputs>
         <data name="output" format="txt" label="ENA submission receipt"/>
         <data name="studies_table_out" format="tabular" label="Studies table">
-            <filter> action_options['input_format_conditional']['input_format'] == "build_tables" or action_options['input_format_conditional']['input_format'] == "excel_tables" or action_options['input_format_conditional']['input_format'] == "isa_json"</filter>
+            <filter> action_options['input_format_conditional']['input_format'] == "build_tables" or action_options['input_format_conditional']['input_format'] == "excel_tables" or action_options['input_format_conditional']['input_format'] == "isa_json" or action_options['input_format_conditional']['input_format'] == "user_generated_tables"</filter>
         </data>
         <data name="samples_table_out" format="tabular" label="Samples table">
             <filter> action_options['input_format_conditional']['input_format'] == "build_tables" or action_options['input_format_conditional']['input_format'] == "excel_tables" or action_options['input_format_conditional']['input_format'] == "isa_json"</filter>
@@ -755,9 +776,37 @@ $samples.append({'title':str($sample.sample_title),'description':str($sample.sam
                 </assert_contents>
             </output>
         </test>
+        <!--Test 9: user generated tables - study-only submission (only the studies table provided) -->
+        <test expect_num_outputs="2">
+            <conditional name="action_options">
+                <param name="action" value="add"/>
+                <section name="test_submit_parameters">
+                    <param name="center" value="Some research center"/>
+                    <param name="submit_dev" value="False" />
+                    <param name="dry_run" value="True" />
+                </section>
+                <conditional name="input_format_conditional">
+                    <param name="input_format" value="user_generated_tables"/>
+                    <param name="checklist_id" value="ERC000011"/>
+                    <param name="studies_users_table" value="studies_user_generated.tsv"/>
+                </conditional>
+            </conditional>
+            <output name="studies_table_out">
+                <assert_contents>
+                    <has_n_lines n="2"/>
+                    <has_n_columns n="7"/>
+                    <has_line_matching expression="alias\ttitle\tstudy_type\tstudy_abstract\taccession\tsubmission_date\tstatus"/>
+                    <has_line_matching expression="TEST_STUDY_01\tA study-only submission test\tEpigenetics\t(.*)\t\t\tADDED"/>
+                </assert_contents>
+            </output>
+        </test>
     </tests>
     <help><![CDATA[This is a wrapper for the ENA upload tool in https://github.com/usegalaxy-eu/ena-upload-cli. The input metadata can be submitted following the tabular format of the templates or their excel spreadsheet equivalent in https://github.com/ELIXIR-Belgium/ENA-metadata-templates. This template repo provides ready to use sheets for every ENA sample checklist and is automatically updated.
-    
+
+        **Tabular files (studies - samples - experiments - runs)**
+
+        When using the tabular files input mode, the studies table is required and the samples, experiments and runs tables are optional. Supplying only the studies table registers a new ENA study on its own (a study-only submission); the resulting accession, submission date and status are returned in the studies table output. Add the samples, experiments and runs tables to submit a complete study with data.
+
         .. class:: warningmark
     
             The ENA upload tool won't work unless you have provided an ENA Webin ID in User > Preferences > Manage Information > ENA Webin account details.]]></help>

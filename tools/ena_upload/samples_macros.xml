@@ -50,7 +50,7 @@
             <param name="dry_run" type="boolean" truevalue="True" falsevalue="False" label="Create test outputs without submitting (meta)data to ENA" help="If yes is selected then NO submission will be performed."/>
         </section>
     </xml>
-    <xml name="run_inputs_macro">
+    <xml name="run_inputs_macro" token_optional="false">
         <conditional name="run_input_format_conditional">
             <param name="run_input_format" type="select" label="Select input data">
                 <option value="multiple_selection_list" selected="True">Dataset or dataset collection</option>
@@ -58,10 +58,10 @@
             </param>
             <when value="multiple_selection_list">
                 <param name="add_extension" type="boolean" checked="False" label="Add .fastq (.gz, .bz2) extension to the Galaxy dataset names to match the ones described in the input tables?"/>
-                <param name="data" type="data" format="fastq,fastqsanger,fastqsanger.gz,fastqsanger.bz2,fastq.gz,fastq.bz2" multiple="True" label="Select dataset or dataset collection" help="Names should match the compressed run's files names defined in the metadata"/>
+                <param name="data" type="data" format="fastq,fastqsanger,fastqsanger.gz,fastqsanger.bz2,fastq.gz,fastq.bz2" multiple="True" optional="@OPTIONAL@" label="Select dataset or dataset collection" help="Names should match the compressed run's files names defined in the metadata"/>
             </when>
             <when value="paired_list">
-                <param name="paired_end_collection" collection_type="list:paired" type="data_collection" format="fastq,fastqsanger,fastqsanger.gz,fastqsanger.bz2,fastq.gz,fastq.bz2" label="List of paired-end sequencing data files" help="Names should match the compressed run's files names defined in the metadata" />
+                <param name="paired_end_collection" collection_type="list:paired" type="data_collection" format="fastq,fastqsanger,fastqsanger.gz,fastqsanger.bz2,fastq.gz,fastq.bz2" optional="@OPTIONAL@" label="List of paired-end sequencing data files" help="Names should match the compressed run's files names defined in the metadata" />
             </when>
         </conditional>
     </xml>
@@ -82,11 +82,11 @@
             <when value="user_generated_tables">
                 <!--<param name="viral_submission" type="boolean" label="Does your submission data belong to a viral sample?" help="If you select yes then your data will be submitted using the ENA virus pathogen reporting standard checklist (see: https://ena-browser-docs.readthedocs.io/en/latest/help_and_guides/sars-cov-2-submissions.html)" />-->
                 <expand macro="checklist_input_macro"/>
-                <expand macro="run_inputs_macro" />
-                <param name="studies_users_table" type="data" format="tabular" multiple="False" label="Studies table" help="Studies metadata file"/>
-                <param name="samples_users_table" type="data" format="tabular" multiple="False" label="Samples table" help="Samples metadata file"/>
-                <param name="experiments_users_table" type="data" format="tabular" multiple="False" label="Experiments table" help="Experiments metadata file"/>
-                <param name="runs_users_table" type="data" format="tabular" multiple="False" label="Runs table" help="Runs metadata file"/>
+                <expand macro="run_inputs_macro" optional="true"/>
+                <param name="studies_users_table" type="data" format="tabular" multiple="False" label="Studies table" help="Studies metadata file. This is the only table required to register a study; provide it on its own to perform a study-only submission, or add the optional tables below to submit a complete study."/>
+                <param name="samples_users_table" type="data" format="tabular" multiple="False" optional="true" label="Samples table" help="Samples metadata file (optional; leave empty for a study-only submission)."/>
+                <param name="experiments_users_table" type="data" format="tabular" multiple="False" optional="true" label="Experiments table" help="Experiments metadata file (optional; leave empty for a study-only submission)."/>
+                <param name="runs_users_table" type="data" format="tabular" multiple="False" optional="true" label="Runs table" help="Runs metadata file (optional; leave empty for a study-only submission)."/>
             </when>
             <when value="build_tables">
                 <param name="add_extension" type="boolean" checked="False" label="Add .fastq (.gz, .bz2) extension to the Galaxy dataset names to match the ones described in the input tables?"/>

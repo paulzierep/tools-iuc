@@ -1,6 +1,9 @@
+import os
 import sys
 
 import yaml
+
+SCHEMAS = ['ENA_study', 'ENA_sample', 'ENA_experiment', 'ENA_run']
 
 
 def fetch_table_data(table_path):
@@ -23,18 +26,12 @@ def fetch_table_data(table_path):
 
 all_data_dict = {}
 print('YAML -------------')
-studies_table_path = sys.argv[1]
-table_data = fetch_table_data(studies_table_path)
-all_data_dict['ENA_study'] = table_data
-samples_table_path = sys.argv[2]
-table_data = fetch_table_data(samples_table_path)
-all_data_dict['ENA_sample'] = table_data
-experiments_table_path = sys.argv[3]
-table_data = fetch_table_data(experiments_table_path)
-all_data_dict['ENA_experiment'] = table_data
-runs_table_path = sys.argv[4]
-table_data = fetch_table_data(runs_table_path)
-all_data_dict['ENA_run'] = table_data
-# print(all_data_dict)
+for schema, table_path in zip(SCHEMAS, sys.argv[1:]):
+    # a table can be missing for submissions that do not use it (e.g. a
+    # study-only submission) or when the corresponding output is filtered out
+    if not os.path.isfile(table_path):
+        all_data_dict[schema] = {}
+        continue
+    all_data_dict[schema] = fetch_table_data(table_path)
 print(yaml.dump(all_data_dict))
 print('YAML -------------')
