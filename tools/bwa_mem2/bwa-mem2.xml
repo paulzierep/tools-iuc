@@ -3,6 +3,7 @@
     <macros>
         <import>read_group_macros.xml</import>
         <import>macros.xml</import>
+        <token name="@VERSION_SUFFIX@">1</token>
     </macros>
     <expand macro="xrefs"/>
     <expand macro="requirements">
@@ -265,7 +266,7 @@ bwa-mem2 mem
                 </conditional>
             </when>
         </conditional>
-        <param name="output_sort" type="select" label="BAM sorting mode" help="The 'Not sorted' option can extend the run time of the tool significantly (cause it requires running on only a single thread).">
+        <param name="output_sort" type="select" label="BAM sorting mode">
             <option value="coordinate" selected="True">Sort by chromosomal coordinates</option>
             <option value="name">Sort by read names  (i.e., the QNAME field) </option>
             <option value="unsorted">Not sorted (sorted as input)</option>
@@ -357,7 +358,7 @@ bwa-mem2 mem
                 <conditional name="read_group_id_conditional">
                     <param name="ID" value="rg1"/>
                 </conditional>
-                    <conditional name="read_group_lb_conditional">
+                <conditional name="read_group_lb_conditional">
                     <param name="LB" value="AARDVARK-1" />
                 </conditional>
                 <param name="PL" value="CAPILLARY"/>

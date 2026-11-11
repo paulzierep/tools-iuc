@@ -6,14 +6,20 @@
         <import>macros.xml</import>
     </macros>
     <expand macro="biotools"/>
-    <expand macro="requirements"/>
+    <expand macro="requirements">
+        <requirement type="package" version="17.b804f">mmseqs2</requirement>
+    </expand>
     <expand macro="version"/>
     <command detect_errors="exit_code"><![CDATA[
 #import re
 @FASTA_FILES@
 SemiBin2
     generate_cannot_links
+#if $mode.select == 'multi' and $mode.multi_fasta.select == 'multi'
     --input-fasta 'contigs.fasta'
+#else
+    --input-fasta 'contigs.$input_fasta.ext'
+#end if
     --output 'output'
     --cannot-name 'cannot'
 #if $mode.ref.select == "cached"
@@ -26,9 +32,8 @@ SemiBin2
 #if $ml_threshold:
     --ml-threshold $ml_threshold
 #end if
-    --cannot-name 'cannot'
-    --threads \${GALAXY_SLOTS:-1}
-    --processes \${GALAXY_SLOTS:-1}
+   --threads "\${GALAXY_SLOTS:-1}"
+   --processes "\${GALAXY_SLOTS:-1}"
     ]]></command>
     <inputs>
         <conditional name="mode">
@@ -56,7 +61,7 @@ SemiBin2
         <test expect_num_outputs="1">
             <conditional name="mode">
                 <param name="select" value="single"/>
-                <param name="input_fasta" ftype="fasta" value="input_single.fasta"/>
+                <param name="input_fasta" ftype="fasta.gz" value="input_single.fasta.gz"/>
                 <conditional name="ref">
                     <param name="select" value="taxonomy"/>
                     <param name="taxonomy_annotation_table" value="taxonomy.tsv"/>
@@ -77,7 +82,7 @@ SemiBin2
         <test expect_num_outputs="1">
             <conditional name="mode">
                 <param name="select" value="single"/>
-                <param name="input_fasta" ftype="fasta" value="input_single.fasta"/>
+                <param name="input_fasta" ftype="fasta.bz2" value="input_single.fasta.bz2"/>
                 <conditional name="ref">
                     <param name="select" value="taxonomy"/>
                     <param name="taxonomy_annotation_table" value="taxonomy.tsv"/>
@@ -118,7 +123,8 @@ SemiBin2
     <help><![CDATA[
 @HELP_HEADER@
 
-This tool runs the contig annotations using mmseqs with GTDB and generate cannot-link file used in the semi-supervised deep learning model training.
+This tool annotates the contigs against GTDB with mmseqs2 and reports the cannot-link
+constraints used when training the model.
 
 Inputs
 ======

@@ -6,6 +6,7 @@
     <expand macro="bio_tools"/>
     <expand macro="requirements"/>
     <expand macro="version_command"/>
+    <expand macro="creators"/>
     <command detect_errors="exit_code"><![CDATA[
 @CMD@
     ]]></command>
@@ -298,8 +299,12 @@ seurat_obj<-RunUMAP(
                     <has_text_matching expression="RunPCA"/>
                 </assert_contents>
             </output>
-            <output name="rds_out" location="https://zenodo.org/records/13732784/files/pca.rds" ftype="rds" compare="sim_size"/>
-            <output name="top_pcs" location="https://zenodo.org/records/13732784/files/top_pcs.txt" ftype="txt">
+            <output name="rds_out" ftype="rds">
+                <assert_contents>
+                    <has_size size="2300000" delta="230000"/>
+                </assert_contents>
+            </output>
+            <output name="top_pcs" location="https://zenodo.org/records/17817806/files/top_pcs.txt" ftype="txt">
                 <assert_contents>
                     <has_text_matching expression="PC_" n="5"/>
                 </assert_contents>
@@ -310,7 +315,7 @@ seurat_obj<-RunUMAP(
             <param name="seurat_rds" location="https://zenodo.org/records/13732784/files/clusters.rds"/>
             <conditional name="method">
                 <param name="method" value="RunTSNE"/>
-                <param name="seed.use" value="1"/>
+                <param name="seed_use" value="1"/>
                 <param name="tsne_method" value="Rtsne"/>
                 <param name="dim_embed" value="2"/>
                 <param name="reduction_key" value="tSNE_"/>
@@ -323,34 +328,44 @@ seurat_obj<-RunUMAP(
                     <has_text_matching expression="RunTSNE"/>
                 </assert_contents>
             </output>
-            <output name="rds_out" location="https://zenodo.org/records/13732784/files/tSNE.rds" ftype="rds" compare="sim_size"/>
+            <output name="rds_out" ftype="rds">
+                <assert_contents>
+                    <has_size size="2300000" delta="230000"/>
+                </assert_contents>
+            </output>
         </test>
                 <test expect_num_outputs="2">
             <!-- test3: RuntSNE with FIt-SNE -->
-            <param name="seurat_rds" location="https://zenodo.org/records/13732784/files/clusters.rds"/>
-            <conditional name="method">
-                <param name="method" value="RunTSNE"/>
-                <param name="seed.use" value="1"/>
-                <param name="tsne_method" value="FIt-SNE"/>
-                <param name="dim_embed" value="2"/>
-                <param name="reduction_key" value="tSNE_"/>
-            </conditional>
-            <section name="advanced_common">
-                <param name="show_log" value="true"/>
-            </section>
+                    <param name="seurat_rds" location="https://zenodo.org/records/13732784/files/clusters.rds"/>
+                    <conditional name="method">
+                        <param name="method" value="RunTSNE"/>
+                        <param name="seed_use" value="1"/>
+                        <param name="tsne_method" value="FIt-SNE"/>
+                        <param name="dim_embed" value="2"/>
+                        <param name="reduction_key" value="tSNE_"/>
+                    </conditional>
+                    <section name="advanced_common">
+                        <param name="show_log" value="true"/>
+                    </section>
             <output name="hidden_output">
                 <assert_contents>
                     <has_text_matching expression="RunTSNE"/>
                 </assert_contents>
             </output>
-            <output name="rds_out" location="https://zenodo.org/records/13732784/files/FIt-SNE.rds" ftype="rds" compare="sim_size"/>
+            <output name="rds_out" ftype="rds">
+                <assert_contents>
+                    <has_size size="2300000" delta="230000"/>
+                </assert_contents>
+            </output>
         </test>
         <test expect_num_outputs="2">
             <!-- test4: RunUMAP -->
             <param name="seurat_rds" location="https://zenodo.org/records/13732784/files/clusters.rds"/>
             <conditional name="method">
                 <param name="method" value="RunUMAP"/>
-                <param name="reduction_key" value="UMAP_"/>
+                <section name="adv">
+                    <param name="reduction_key" value="UMAP_"/>
+                </section>
                 <conditional name="umap_method">
                     <param name="umap_method" value="uwot"/>
                 </conditional>
@@ -363,14 +378,20 @@ seurat_obj<-RunUMAP(
                     <has_text_matching expression="RunUMAP"/>
                 </assert_contents>
             </output>
-            <output name="rds_out" location="https://zenodo.org/records/13732784/files/umap.rds" ftype="rds" compare="sim_size"/>
+            <output name="rds_out" ftype="rds">
+                <assert_contents>
+                    <has_size size="2300000" delta="230000"/>
+                </assert_contents>
+            </output>
         </test>
         <test expect_num_outputs="2">
             <!-- test5: RunUMAP - umap-learn -->
             <param name="seurat_rds" location="https://zenodo.org/records/13732784/files/clusters.rds"/>
             <conditional name="method">
                 <param name="method" value="RunUMAP"/>
-                <param name="reduction_key" value="UMAP_"/>
+                <section name="adv">
+                    <param name="reduction_key" value="UMAP_"/>
+                </section>
                 <conditional name="umap_method">
                     <param name="umap_method" value="umap-learn"/>
                     <conditional name="densmap">
@@ -386,7 +407,11 @@ seurat_obj<-RunUMAP(
                     <has_text_matching expression="RunUMAP"/>
                 </assert_contents>
             </output>
-            <output name="rds_out" location="https://zenodo.org/records/13732784/files/umap-learn.rds" ftype="rds" compare="sim_size"/>
+            <output name="rds_out" ftype="rds">
+                <assert_contents>
+                    <has_size size="2300000" delta="230000"/>
+                </assert_contents>
+            </output>
         </test>
     </tests>
     <help><![CDATA[

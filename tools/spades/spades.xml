@@ -1,4 +1,4 @@
-<tool id="spades" name="SPAdes" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="20.01">
+<tool id="spades" name="SPAdes" version="@TOOL_VERSION@+galaxy@VERSION_SUFFIX@" profile="@PROFILE@">
     <description>genome assembler for genomes of regular and single-cell projects</description>
     <macros>
         <import>macros.xml</import>
@@ -14,7 +14,7 @@
 #set $library = 1
 
 @PREPROCESS_INPUT_FILES_MAIN@
-#if $additional_reads.selector == 'true'
+#if $file_processing.additional_reads.selector == 'true'
     @PREPROCESS_INPUT_FILES_ADDITIONAL@
 #end if
 @PREPROCESS_NANOPORE_PACBIO_FILES@
@@ -28,7 +28,7 @@ spades.py
     -o 'output'    
     @RESOURCES@
     @INPUT_READS_MAIN@
-    #if $additional_reads.selector == 'true'
+    #if $file_processing.additional_reads.selector == 'true'
         @INPUT_READS_ADDITIONAL@
     #end if
     ## additional reads
@@ -50,21 +50,16 @@ spades.py
     ]]></command>
     <inputs>
         <expand macro="operation_mode" help="To run read error correction, reads should be in FASTQ format."/>
-        <expand macro="input_files_all" format="@INTYPES@" label="FASTA/FASTQ file(s)"/>
-        <expand macro="input_additional_files_all" format="@INTYPES@" label="FASTA/FASTQ file(s)"/>
-        <section name="arf" title="Additional read files">
-            <expand macro="nanopore_pacbio"/>
-            <expand macro="sanger"/>
-            <expand macro="contigs"/>
-        </section>
+        <expand macro="input_corona_rnaviral_spades" label="FASTA/FASTQ file(s)"/>
         <expand macro="pipeline_options" additional_help="&quot;Isolate&quot; is not compatible with &quot;Careful&quot; and Operation mode &quot;Only error correction&quot;">
             <option value="--sc">Single cell mode: required for MDA (single-cell) data (--sc)</option>
             <option value="--isolate">Isolate: highly recommended for high-coverage isolate and multi-cell data (--isolate)</option>
             <option value="--careful">Careful: ties to reduce the number of mismatches and short indels. Only recommended for small genomes (--careful)</option>
             <option value="--iontorrent">Iontorrent: required when assembling IonTorrent data (--iontorrent)</option>
+            <expand macro="frugal_option"/>
         </expand>
         <expand macro="covcutoff"/>
-        <expand macro="kmer" help="If --sc is set the default values are 21,33,55. For multicell datasets K values are automatically selected using maximum read length."/>        
+        <expand macro="kmer" help="If --sc is set the default values are 21,33,55. For multicell datasets K values are automatically selected using maximum read length."/>
         <expand macro="phred"/>
         <expand macro="optional_output"/>
     </inputs>
@@ -78,7 +73,7 @@ spades.py
         <expand macro="out_l"/>
         <expand macro="out_sc"/>
         <expand macro="out_sp"/>
-        <expand macro="out_ss"/>        
+        <expand macro="out_ss"/>
     </outputs>
     <tests>
         <!--
@@ -90,17 +85,19 @@ spades.py
         not used in a test:
             multiple libraries: pe#-m, pe#-s, mp#-12, mp#-1, mp#-2, mp#-<or>, mp#-s, hqmp#-12, hqmp#-1, hqmp#-2, hqmp#-s, hqmp#-<or>, nxmate#-1, nxmate-#2
         -->
-
-        <!-- #1 single, interlaced, fastq.gz, default parameters -->
+        <!-- #1 single, interlaced, fastq.gz, default parameters , co-assembly -->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -114,30 +111,75 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
-        <!-- #2 single, separate, fastq, custom parameters  -->
+        <!-- #1b memory frugal mode -->
+        <test expect_num_outputs="4">
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+            </conditional>
+            <param name="mode_sel" value="--frugal"/>
+            <assert_command>
+                <has_text text="--frugal"/>
+            </assert_command>
+            <output name="out_ag">
+                <assert_contents>
+                    <has_n_lines n="36"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_ags">
+                <assert_contents>
+                    <has_n_lines n="3"/>
+                    <has_text_matching expression="H.+"/>
+                    <has_text_matching expression="S.+"/>
+                    <has_text_matching expression="P.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cn">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_sc">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
+                </assert_contents>
+            </output>
+        </test>
+        <!-- #2 single, separate, fastq, custom parameters, co-assembly  -->
         <test expect_num_outputs="9">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli_1K">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="list:paired">
+                            <element name="ecoli_1K">
+                                <collection type="paired">
+                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                </collection>
+                            </element>
+                        </collection>
+                    </param>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--isolate,--disable-rr,--iontorrent"/>
             <conditional name="cov_cond">
@@ -152,7 +194,7 @@ spades.py
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -165,7 +207,7 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_cp">
@@ -176,8 +218,8 @@ spades.py
             <output name="out_cs">
                 <assert_contents>
                     <has_n_lines n="2"/>
-                    <has_text_matching expression="#name&#009;length&#009;coverage"/>
-                    <has_text_matching expression="NODE_1&#009;1000&#009;225.723888"/>
+                    <has_text_matching expression="#name&#9;length&#9;coverage"/>
+                    <has_text_matching expression="NODE_1&#9;1000&#9;225.723888"/>
                 </assert_contents>
             </output>
             <output name="out_l">
@@ -204,54 +246,8 @@ spades.py
         <!-- #3 single, separate, fasta, default parameters -->
         <test expect_num_outputs="4">
             <param name="operation_mode" value="--only-assembler"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli_1K">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
-            </conditional>
-            <output name="out_ag">
-                <assert_contents>
-                    <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
-                </assert_contents>
-            </output>
-            <output name="out_ags">
-                <assert_contents>
-                    <has_n_lines n="3"/>
-                    <has_text_matching expression="H.+"/>
-                    <has_text_matching expression="S.+"/>
-                    <has_text_matching expression="P.+"/>
-                </assert_contents>
-            </output>
-            <output name="out_cn">
-                <assert_contents>
-                    <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
-                </assert_contents>
-            </output>
-            <output name="out_sc">
-                <assert_contents>
-                    <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
-                </assert_contents>
-            </output>
-        </test>
-        <!-- #4 multiple, single & paired-end within same library: careful mode -->
-        <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="single"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
-            </conditional>
-            <conditional name="additional_reads">
-                <param name="selector" value="true"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
                 <conditional name="singlePaired">
                     <param name="sPaired" value="paired_collection"/>
                     <param name="input">
@@ -266,11 +262,10 @@ spades.py
                     </param>
                 </conditional>
             </conditional>
-            <param name="mode_sel" value="--careful"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -284,44 +279,100 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
+                </assert_contents>
+            </output>
+        </test>
+        <!-- #4 multiple, single & paired-end within same library: careful mode, co-assembly -->
+        <test expect_num_outputs="4">
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="single"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+                <conditional name="additional_reads">
+                    <param name="selector" value="true"/>
+                    <conditional name="singlePaired">
+                        <param name="sPaired" value="paired_collection"/>
+                        <param name="input">
+                            <collection type="list:paired">
+                                <element name="ecoli_1K">
+                                    <collection type="paired">
+                                        <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                        <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                    </collection>
+                                </element>
+                            </collection>
+                        </param>
+                    </conditional>
+                </conditional>
+            </conditional>
+            <param name="mode_sel" value="--careful"/>
+            <output name="out_ag">
+                <assert_contents>
+                    <has_n_lines n="36"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_ags">
+                <assert_contents>
+                    <has_n_lines n="3"/>
+                    <has_text_matching expression="H.+"/>
+                    <has_text_matching expression="S.+"/>
+                    <has_text_matching expression="P.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cn">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_sc">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #5 multiple, single & paired-end in different libraries -->
         <test expect_num_outputs="4">
             <param name="operation_mode" value="--only-assembler"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="single"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
-            </conditional>
-            <conditional name="additional_reads">
-                <param name="selector" value="true"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
                 <conditional name="singlePaired">
-                    <param name="sPaired" value="paired_collection"/>
-                    <param name="input">
-                        <collection type="list:paired">
-                            <element name="ecoli_1K">
-                                <collection type="paired">
-                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                                </collection>
-                            </element>
-                        </collection>
-                    </param>
+                    <param name="sPaired" value="single"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+                <conditional name="additional_reads">
+                    <param name="selector" value="true"/>
+                    <conditional name="singlePaired">
+                        <param name="sPaired" value="paired_collection"/>
+                        <param name="input">
+                            <collection type="list:paired">
+                                <element name="ecoli_1K">
+                                    <collection type="paired">
+                                        <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                        <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                    </collection>
+                                </element>
+                            </collection>
+                        </param>
+                    </conditional>
                 </conditional>
             </conditional>
             <param name="mode_sel" value="--careful"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -335,39 +386,44 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #6 only corrected reads are created as an output -->
         <test expect_num_outputs="2">
             <param name="operation_mode" value="--only-error-correction"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--careful"/>
             <param name="optional_output" value="cr,l"/>
             <output_collection name="out_cr" type="list" count="3">
-                <element name="ecoli_1K.fastq.gz_100.0_0">
+                <element name="ecoli_1K.fastq.gz_100.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="487006" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz_200.0_0">
+                <element name="ecoli_1K.fastq.gz_200.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="482170" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz__unpaired00.0_0">
+                <element name="ecoli_1K.fastq.gz__unpaired00.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="20" delta="5"/>
+                        <has_size value="0"/>
                     </assert_contents>
                 </element>
             </output_collection>
@@ -380,26 +436,31 @@ spades.py
         <!-- #7 only corrected reads are created as an output -->
         <test expect_num_outputs="2">
             <param name="operation_mode" value="--only-error-correction"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--careful,--sc"/>
             <param name="optional_output" value="cr,l"/>
             <output_collection name="out_cr" type="list" count="3">
-                <element name="ecoli_1K.fastq.gz_100.0_0">
+                <element name="ecoli_1K.fastq.gz_100.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="487006" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz_200.0_0">
+                <element name="ecoli_1K.fastq.gz_200.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="482170" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz__unpaired00.0_0">
+                <element name="ecoli_1K.fastq.gz__unpaired00.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="20" delta="5"/>
+                        <has_size value="0"/>
                     </assert_contents>
                 </element>
             </output_collection>
@@ -412,15 +473,18 @@ spades.py
         <!-- #8 -->
         <test expect_num_outputs="4">
             <param name="operation_mode" value="--only-assembler"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--sc"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_[0-9]+_length_[0-9]+_cov_[0-9]+\.[0-9]+"/>
+                    <has_text_matching expression="&gt;EDGE_[0-9]+_length_[0-9]+_cov_[0-9]+\.[0-9]+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -434,38 +498,43 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #9 only corrected reads are created as an output -->
         <test expect_num_outputs="2">
             <param name="operation_mode" value="--only-error-correction"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="optional_output" value="cr,l"/>
             <output_collection name="out_cr" type="list" count="3">
-                <element name="ecoli_1K.fastq.gz_100.0_0">
+                <element name="ecoli_1K.fastq.gz_100.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="487006" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz_200.0_0">
+                <element name="ecoli_1K.fastq.gz_200.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="482170" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz__unpaired00.0_0">
+                <element name="ecoli_1K.fastq.gz__unpaired00.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="20" delta="5"/>
+                        <has_size value="0"/>
                     </assert_contents>
                 </element>
             </output_collection>
@@ -478,26 +547,31 @@ spades.py
         <!-- #10 only corrected reads are created as an output -->
         <test expect_num_outputs="2">
             <param name="operation_mode" value="--only-error-correction"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--sc"/>
             <param name="optional_output" value="cr,l"/>
             <output_collection name="out_cr" type="list" count="3">
-                <element name="ecoli_1K.fastq.gz_100.0_0">
+                <element name="ecoli_1K.fastq.gz_100.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="487006" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz_200.0_0">
+                <element name="ecoli_1K.fastq.gz_200.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="130317" delta="7000"/>
+                        <has_size value="482170" delta="1000"/>
+                        <has_n_lines n="8216"/>
                     </assert_contents>
                 </element>
-                <element name="ecoli_1K.fastq.gz__unpaired00.0_0">
+                <element name="ecoli_1K.fastq.gz__unpaired00.0_0" decompress="true">
                     <assert_contents>
-                        <has_size value="20" delta="5"/>
+                        <has_size value="0"/>
                     </assert_contents>
                 </element>
             </output_collection>
@@ -509,15 +583,18 @@ spades.py
         </test>
         <!-- #11 -->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--sc"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_5_length_1000_cov_140.620106"/>
+                    <has_text_matching expression="&gt;EDGE_5_length_1000_cov_140.620106"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -531,36 +608,39 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #12 -->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli_1K">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="list:paired">
+                            <element name="ecoli_1K">
+                                <collection type="paired">
+                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                </collection>
+                            </element>
+                        </collection>
+                    </param>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--sc,--careful"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_5_length_1000_cov_140.620106"/>
+                    <has_text_matching expression="&gt;EDGE_5_length_1000_cov_140.620106"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -574,37 +654,40 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #13 -->
         <test expect_num_outputs="4">
             <param name="operation_mode" value="--only-assembler"/>
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli_1K">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="list:paired">
+                            <element name="ecoli_1K">
+                                <collection type="paired">
+                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                </collection>
+                            </element>
+                        </collection>
+                    </param>
+                </conditional>
             </conditional>
             <param name="mode_sel" value="--sc,--careful"/>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE\_.+"/>
+                    <has_text_matching expression="&gt;EDGE\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -618,28 +701,31 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #14 interlaced, fastq.gz, hybrid assembly: nanopore, pacbio sanger and trustedcontigs -->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_interlaced"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+                <section name="arf">
+                    <param name="nanopore" value="ecoli_1K.fastq.gz"/>
+                    <param name="pacbio" value="ecoli_1K.fastq.gz"/>
+                    <param name="sanger" value="ecoli_1K.fastq.gz"/>
+                    <param name="trusted_contigs" value="ecoli_1K.fasta.gz"/>
+                </section>
             </conditional>
-            <section name="arf">
-                <param name="nanopore" value="ecoli_1K.fastq.gz"/>
-                <param name="pacbio" value="ecoli_1K.fastq.gz"/>
-                <param name="sanger" value="ecoli_1K.fastq.gz"/>
-                <param name="trusted_contigs" value="ecoli_1K.fasta.gz"/>
-            </section>
             <assert_command>
                 <has_text text="--nanopore"/>
                 <has_text text="--pacbio"/>
@@ -649,7 +735,7 @@ spades.py
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -663,37 +749,40 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #15 mate-pair reads orientation rf-->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli_1K">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
-                <param name="type_paired" value="hqmp"/>
-                <param name="orientation" value="rf"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="list:paired">
+                            <element name="ecoli_1K">
+                                <collection type="paired">
+                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                </collection>
+                            </element>
+                        </collection>
+                    </param>
+                    <param name="type_paired" value="hqmp"/>
+                    <param name="orientation" value="rf"/>
+                </conditional>
             </conditional>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -706,7 +795,7 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
@@ -717,24 +806,27 @@ spades.py
         </test>
         <!-- #16 high-quality mate-pair reads collection-->
         <test expect_num_outputs="4">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="paired_collection"/>
-                <param name="input">
-                    <collection type="list:paired">
-                        <element name="ecoli.fastq">
-                            <collection type="paired">
-                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
-                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
-                            </collection>
-                        </element>
-                    </collection>
-                </param>
-                <param name="type_paired" value="hqmp"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="list:paired">
+                            <element name="ecoli.fastq">
+                                <collection type="paired">
+                                    <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                    <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                                </collection>
+                            </element>
+                        </collection>
+                    </param>
+                    <param name="type_paired" value="hqmp"/>
+                </conditional>
             </conditional>
             <output name="out_ag">
                 <assert_contents>
                     <has_n_lines n="36"/>
-                    <has_text_matching expression=">EDGE_.+"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
                 </assert_contents>
             </output>
             <output name="out_ags">
@@ -748,33 +840,199 @@ spades.py
             <output name="out_cn">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000\_cov\_.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
                 </assert_contents>
             </output>
             <output name="out_sc">
                 <assert_contents>
                     <has_n_lines n="18"/>
-                    <has_text_matching expression=">NODE\_1\_length\_1000.+"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
         <!-- #17 Fix stats script -->
         <test expect_num_outputs="1">
-            <conditional name="singlePaired">
-                <param name="sPaired" value="single"/>
-                <param name="input1" value="ecoli_1K.fastq.gz"/>
+            <conditional name="file_processing">
+                <param name="is_select" value="co"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="single"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
             </conditional>
             <param name="optional_output" value="ss"/>
             <output name="out_ss">
                 <assert_contents>
                     <has_n_lines n="2"/>
-                    <has_text text="NODE_1&#009;1000&#009;140.620106"/>
-                    <has_text_matching expression="#name&#009;length&#009;coverage"/>
+                    <has_text text="NODE_1&#9;1000&#9;140.620106"/>
+                    <has_text_matching expression="#name&#9;length&#9;coverage"/>
+                </assert_contents>
+            </output>
+        </test>
+        <!-- #18 single, interlaced, fastq.gz, default parameters, individual -->
+        <test expect_num_outputs="4">
+            <conditional name="file_processing">
+                <param name="is_select" value="individual"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_interlaced"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+            </conditional>
+            <output name="out_ag">
+                <assert_contents>
+                    <has_n_lines n="36"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_ags">
+                <assert_contents>
+                    <has_n_lines n="3"/>
+                    <has_text_matching expression="H.+"/>
+                    <has_text_matching expression="S.+"/>
+                    <has_text_matching expression="P.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cn">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_sc">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
+                </assert_contents>
+            </output>
+        </test>
+        <!-- #19 single, separate, fastq, custom parameters, individual  -->
+        <test expect_num_outputs="9">
+            <conditional name="file_processing">
+                <param name="is_select" value="individual"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="paired_collection"/>
+                    <param name="input">
+                        <collection type="paired">
+                            <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                            <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                        </collection>
+                    </param>
+                </conditional>
+            </conditional>
+            <param name="mode_sel" value="--isolate,--disable-rr,--iontorrent"/>
+            <conditional name="cov_cond">
+                <param name="cov_cutoff" value="auto"/>
+            </conditional>
+            <conditional name="kmer_cond">
+                <param name="kmer_sel" value="manual"/>
+                <param name="manual" value="33"/>
+            </conditional>
+            <param name="phred_offset" value="33"/>
+            <param name="optional_output" value="ag,ags,cn,cp,cs,sc,sp,ss,l"/>
+            <output name="out_ag">
+                <assert_contents>
+                    <has_n_lines n="36"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_ags">
+                <assert_contents>
+                    <has_n_lines n="2"/>
+                    <has_text_matching expression="H.+"/>
+                    <has_text_matching expression="S.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cn">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cp">
+                <assert_contents>
+                    <has_n_lines n="0"/>
+                </assert_contents>
+            </output>
+            <output name="out_cs">
+                <assert_contents>
+                    <has_n_lines n="2"/>
+                    <has_text_matching expression="#name&#9;length&#9;coverage"/>
+                    <has_text_matching expression="NODE_1&#9;1000&#9;225.723888"/>
+                </assert_contents>
+            </output>
+            <output name="out_l">
+                <assert_contents>
+                    <has_text_matching expression="Thank you for using SPAdes!"/>
+                </assert_contents>
+            </output>
+            <output name="out_sc">
+                <assert_contents>
+                    <has_n_lines n="0"/>
+                </assert_contents>
+            </output>
+            <output name="out_sp">
+                <assert_contents>
+                    <has_n_lines n="0"/>
+                </assert_contents>
+            </output>
+            <output name="out_ss">
+                <assert_contents>
+                    <has_n_lines n="0"/>
+                </assert_contents>
+            </output>
+        </test>
+        <!-- #20 multiple, single & paired-end within same library: careful mode, individual -->
+        <test expect_num_outputs="4">
+            <conditional name="file_processing">
+                <param name="is_select" value="individual"/>
+                <conditional name="singlePaired">
+                    <param name="sPaired" value="single"/>
+                    <param name="input1" value="ecoli_1K.fastq.gz"/>
+                </conditional>
+                <conditional name="additional_reads">
+                    <param name="selector" value="true"/>
+                    <conditional name="singlePaired">
+                        <param name="sPaired" value="paired_collection"/>
+                        <param name="input">
+                            <collection type="paired">
+                                <element name="forward" value="ecoli_1K_1.fastq.gz" ftype="fastqsanger.gz"/>
+                                <element name="reverse" value="ecoli_1K_2.fastq.gz" ftype="fastqsanger.gz"/>
+                            </collection>
+                        </param>
+                    </conditional>
+                </conditional>
+            </conditional>
+            <param name="mode_sel" value="--careful"/>
+            <output name="out_ag">
+                <assert_contents>
+                    <has_n_lines n="36"/>
+                    <has_text_matching expression="&gt;EDGE_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_ags">
+                <assert_contents>
+                    <has_n_lines n="3"/>
+                    <has_text_matching expression="H.+"/>
+                    <has_text_matching expression="S.+"/>
+                    <has_text_matching expression="P.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_cn">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000\_cov\_.+"/>
+                </assert_contents>
+            </output>
+            <output name="out_sc">
+                <assert_contents>
+                    <has_n_lines n="18"/>
+                    <has_text_matching expression="&gt;NODE\_1\_length\_1000.+"/>
                 </assert_contents>
             </output>
         </test>
     </tests>
     <help><![CDATA[
+
+@HELP_INPUT_MODE@
 .. class:: infomark
 
 **What it does**
@@ -816,7 +1074,7 @@ spades.py
 More information are available on `github <https://github.com/ablab/spades>`_.
     ]]></help>
     <expand macro="citations">
-            <citation type="doi">10.1089/cmb.2012.0021</citation>
-            <citation type="doi">10.1007/978-3-642-37195-0_13</citation>
+        <citation type="doi">10.1089/cmb.2012.0021</citation>
+        <citation type="doi">10.1007/978-3-642-37195-0_13</citation>
     </expand>
 </tool>
